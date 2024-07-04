@@ -1,5 +1,13 @@
-import React, { ChangeEvent, useState } from "react";
+import { ChangeEvent, useState } from "react";
+import PptxGenJS from "pptxgenjs";
+import parse from "html-react-parser";
 import "./App.css";
+
+const DEFAULT_FONT_FAMILY = "DM Sans Bold";
+const DEFAULT_FONT_SIZE_TITLE = 30;
+const DEFAULT_FONT_SIZE_TOPIC = 14;
+const DEFAULT_FONT_SIZE_SUBTOPIC = 24;
+const DEFAULT_FONT_SIZE_CONTENT = 16;
 
 function App() {
   const [text, setText] = useState<string>("Hello, World");
@@ -14,6 +22,9 @@ function App() {
   };
 
   const createElement = (htmlString: string) => {
+    const parsedLines = parseHtml(htmlString);
+    generatePptx(parsedLines);
+
     return (
       <div
         className="ElementContent"
@@ -24,9 +35,70 @@ function App() {
           alignContent: "center",
         }}
       >
-        <div>{htmlString}</div>
+        {parse(htmlString)}
       </div>
     );
+  };
+
+  const parseHtml = (html: string) => {
+    // Extracting text with simple parsing logic
+    const div = document.createElement("div");
+    div.innerHTML = html;
+
+    const parsedLines: { text: string; color: string; fontSize: number }[] = [];
+
+    div.querySelectorAll("span").forEach((span) => {
+      const style = span.getAttribute("style");
+      const text = span.innerText;
+
+      let color = "000000"; // Default color
+      let fontSize = 18; // Default font size
+
+      if (style) {
+        const colorMatch = style.match(/color:\s*([^;]+)/);
+        const fontSizeMatch = style.match(/font-size:\s*([^;]+)/);
+
+        if (colorMatch) {
+          color = colorMatch[1]
+            .replace("rgb(", "")
+            .replace(")", "")
+            .split(",")
+            .map((x) => parseInt(x).toString(16).padStart(2, "0"))
+            .join("");
+        }
+
+        if (fontSizeMatch) {
+          fontSize = parseInt(fontSizeMatch[1].replace("pt", ""), 10);
+        }
+      }
+
+      parsedLines.push({ text, color, fontSize });
+    });
+
+    return parsedLines;
+  };
+
+  const generatePptx = (
+    parsedLines: { text: string; color: string; fontSize: number }[]
+  ) => {
+    const pptx = new PptxGenJS();
+    const slide = pptx.addSlide();
+
+    const textElements = parsedLines.map((line) => ({
+      text: line.text,
+      options: { fontSize: line.fontSize, color: line.color },
+    }));
+
+    slide.addText(textElements, {
+      x: 1,
+      y: 1,
+      w: "80%",
+      h: "90%",
+      valign: "top",
+      align: "left",
+    });
+
+    pptx.writeFile({ fileName: "presentation.pptx" });
   };
 
   return (
