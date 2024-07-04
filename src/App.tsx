@@ -47,32 +47,35 @@ function App() {
 
     const parsedLines: { text: string; color: string; fontSize: number }[] = [];
 
-    div.querySelectorAll("span").forEach((span) => {
-      const style = span.getAttribute("style");
-      const text = span.innerText;
+    div.querySelectorAll("p").forEach((p) => {
+      p.querySelectorAll("span").forEach((span) => {
+        const style = span.getAttribute("style");
+        const text = span.innerText;
 
-      let color = "000000"; // Default color
-      let fontSize = 18; // Default font size
+        let color = "000000"; // Default color
+        let fontSize = 18; // Default font size
 
-      if (style) {
-        const colorMatch = style.match(/color:\s*([^;]+)/);
-        const fontSizeMatch = style.match(/font-size:\s*([^;]+)/);
+        if (style) {
+          const colorMatch = style.match(/color:\s*([^;]+)/);
+          const fontSizeMatch = style.match(/font-size:\s*([^;]+)/);
 
-        if (colorMatch) {
-          color = colorMatch[1]
-            .replace("rgb(", "")
-            .replace(")", "")
-            .split(",")
-            .map((x) => parseInt(x).toString(16).padStart(2, "0"))
-            .join("");
+          if (colorMatch) {
+            color = colorMatch[1]
+              .replace("rgb(", "")
+              .replace(")", "")
+              .split(",")
+              .map((x) => parseInt(x).toString(16).padStart(2, "0"))
+              .join("");
+          }
+
+          if (fontSizeMatch) {
+            fontSize = parseInt(fontSizeMatch[1].replace("pt", ""), 10);
+          }
         }
 
-        if (fontSizeMatch) {
-          fontSize = parseInt(fontSizeMatch[1].replace("pt", ""), 10);
-        }
-      }
-
-      parsedLines.push({ text, color, fontSize });
+        parsedLines.push({ text, color, fontSize });
+      });
+      parsedLines.push({ text: "\n", color: "000000", fontSize: 18 });
     });
 
     return parsedLines;
